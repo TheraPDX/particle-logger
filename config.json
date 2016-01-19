@@ -1,0 +1,8 @@
+{
+    "Photon01": [
+        {
+            "variable": "temperature",
+            "metric_name": "locations.room1.temperature"
+        }
+    ]
+}
