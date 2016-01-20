@@ -4,6 +4,7 @@ and log them to a Grafana board.
 """
 
 import json
+import logging
 import os
 import sys
 
@@ -21,6 +22,11 @@ def require_env(name):
     if not value:
         raise ValueError('Missing %s env variable' % name)
     return value
+
+
+logger = logging.getLogger('main')
+logger_influx = logging.getLogger('influxdb')
+logger_particle = logging.getLogger('particle')
 
 
 # Configuration
@@ -61,7 +67,7 @@ def collect_metric(measurement, tags, value):
     client = influxdb.InfluxDBClient(INFLUXDB_HOST, INFLUXDB_PORT,
                                      INFLUXDB_USER, INFLUXDB_PASSWORD,
                                      INFLUXDB_DATABASE)
-    print('INFLUX: Processing device %s' % name)
+    logger_influx.info('Collecting measurement %s=%s', measurement, value)
     success = client.write_points(data)
     if success is not True:
         raise RuntimeError('Could not send metric to InfluxDB')
@@ -82,11 +88,11 @@ def get_access_token():
     data = {'grant_type': 'refresh_token', 'refresh_token': PARTICLE_REFRESH_TOKEN}
 
     # Send request
-    print('PARTICLE: Fetching access token...')
+    logger_particle.info('Fetching access token...')
     response = requests.post(url, auth=auth, data=data)
     if response.status_code != 200:
-        print('  Could not retrieve access token (HTTP %s)' % response.status_code)
-        print('  Are your refresh token and client credentials correct?')
+        logger_particle.error('Could not retrieve access token (HTTP %s)', response.status_code)
+        logger_particle.error('Are your refresh token and client credentials correct?')
         sys.exit(1)
 
     # Decode response
@@ -114,16 +120,17 @@ def fetch_variable(device, variable, access_token):
     headers = {'Authorization': 'Bearer %s' % access_token}
 
     # Send request
-    print('PARTICLE: Fetching %s for device %s...' % (variable, device))
+    logger_particle.info('Fetching %s for device %s...', variable, device)
     response = requests.get(url, headers=headers)
     if response.status_code == 408:
-        print('  Could not fetch variable %s from device %s' % (variable, device))
-        print('  Device appears to be offline.')
+        logger_particle.error('Could not fetch variable %s from device %s', variable, device)
+        logger_particle.error('Device appears to be offline.')
         return None
     elif response.status_code != 200:
-        print('  HTTP %s' % response.status_code)
-        print('  Could not fetch variable %s from device %s' % (variable, device))
-        print('  Does that device exist, is it yours and does it publish that variable?')
+        logger_particle.error('HTTP %s', response.status_code)
+        logger_particle.error('Could not fetch variable %s from device %s', variable, device)
+        logger_particle.error('Does that device exist, is it yours and does it '
+                              'publish that variable?')
         return None
 
     # Decode response
@@ -144,17 +151,20 @@ def get_devices():
 
 if __name__ == '__main__':
 
+    # Set up logging
+    logging.basicConfig(level=logging.DEBUG)
+
     # Read config file
     devices = get_devices()
 
     # For each device, fetch and upload the variables
     access_token = get_access_token()
     for name, variables in devices.items():
-        print('MAIN: Processing device %s' % name)
+        logger.info('Processing device %s', name)
         for conf in variables:
             variable = conf['variable']
             value = fetch_variable(name, variable, access_token)
             if value is None:
-                print('MAIN: Could not fetch variable %s for device %s' % (variable, name))
+                logger.error('Could not fetch variable %s for device %s', variable, name)
             else:
                 collect_metric(conf['measurement'], conf['tags'], value)
