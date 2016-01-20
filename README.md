@@ -1,35 +1,28 @@
 # Photon Logger
 
-Log temperatures from Photons to Grafana through Graphite.
+Log temperatures from Photons to Grafana through InfluxDB.
 
 
 ## Env Vars
 
 The following env variables are required:
 
-- `GRAPHITE_HOST`: The Graphite host.
+- `INFLUXDB_HOST`: The InfluxDB host.
+- `INFLUXDB_USER`: The InfluxDB user.
+- `INFLUXDB_PASSWORD`: The InfluxDB password.
+- `INFLUXDB_DATABASE`: The InfluxDB database.
 - `PARTICLE_CLIENT_ID`: A Particle Cloud API OAuth client id.
 - `PARTICLE_CLIENT_SECRET`: A Particle Cloud API OAuth client secret.
 - `PARTICLE_REFRESH_TOKEN`: A Particle Cloud API refresh token.
 
 The following env variables may be set:
 
-- `GRAPHITE_PORT`: The Graphite port. Defaults to `2003`.
+- `INFLUXDB_PORT`: The InfluxDB port. Defaults to `8086`.
 
 
 ## Config file
 
-You should provide a `config.json` file in the following format:
-
-    {
-        "device1": [
-            {
-                "variable": "temperature", 
-                "metric_name": "locations.network-cabinet.temperature"
-            }
-        ],
-        ...
-    }
+Adjust `config.json` to your likings.
 
 
 ## Generating a Particle Cloud API token
@@ -73,7 +66,10 @@ Build the image:
 Start the image:
 
     $ docker run -d \
-        -e GRAPHITE_HOST=<host> \
+        -e INFLUXDB_HOST=<host> \
+        -e INFLUXDB_USER=<user> \
+        -e INFLUXDB_PASSWORD=<password> \
+        -e INFLUXDB_DATABASE=<database> \
         -e PARTICLE_CLIENT_ID=<client-id> \
         -e PARTICLE_CLIENT_SECRET=<client-secret> \
         -e PARTICLE_REFRESH_TOKEN=<refresh-token>

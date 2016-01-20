@@ -2,7 +2,11 @@
     "Photon01": [
         {
             "variable": "temperature",
-            "metric_name": "locations.room1.temperature"
+            "measurement": "temperature",
+            "tags": {
+                "location": "coredump",
+                "room": "main-room"
+            }
         }
     ]
 }

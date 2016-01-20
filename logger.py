@@ -5,11 +5,10 @@ and log them to a Grafana board.
 
 import json
 import os
-import socket
 import sys
-import time
 
 import requests
+import influxdb
 
 
 # Helper functions
@@ -24,17 +23,14 @@ def require_env(name):
     return value
 
 
-def now():
-    """
-    Return the current timestamp as an integer.
-    """
-    return int(time.time())
-
-
 # Configuration
 
-GRAPHITE_HOST = require_env('GRAPHITE_HOST')
-GRAPHITE_PORT = int(env('GRAPHITE_PORT', 2003))
+INFLUXDB_HOST = require_env('INFLUXDB_HOST')
+INFLUXDB_PORT = int(env('INFLUXDB_PORT', 8086))
+INFLUXDB_USER = require_env('INFLUXDB_USER')
+INFLUXDB_PASSWORD = require_env('INFLUXDB_PASSWORD')
+INFLUXDB_DATABASE = require_env('INFLUXDB_DATABASE')
+
 PARTICLE_CLIENT_ID = require_env('PARTICLE_CLIENT_ID')
 PARTICLE_CLIENT_SECRET = require_env('PARTICLE_CLIENT_SECRET')
 PARTICLE_REFRESH_TOKEN = require_env('PARTICLE_REFRESH_TOKEN')
@@ -42,26 +38,33 @@ PARTICLE_REFRESH_TOKEN = require_env('PARTICLE_REFRESH_TOKEN')
 
 # Logging functionality
 
-def collect_metric(name, value, timestamp=None):
+def collect_metric(measurement, tags, value):
     """
-    Send a metric to Graphite.
+    Send a measurement to InfluxDB.
 
     Args:
-        name (str):
-            The name of the metric. Use dots for namespacing.
-            Example: ``locations.serverroom.temperature``.
+        measurement (str):
+            The name of the measurement.
+        tags (dict):
+            Tags for the measurement.
         value (int or float):
             The value to log. Should be a numeric value.
-        timestamp (int):
-            A unix timestamp. Defaults to now.
 
     """
-    data = '%s %s %d\n' % (name, value, timestamp or now())
-    print('GRAPHITE: %s' % data.strip())
-    sock = socket.socket()
-    sock.connect((GRAPHITE_HOST, GRAPHITE_PORT))
-    sock.send(data.encode('ascii'))
-    sock.close()
+    data = [{
+        'measurement': measurement,
+        'tags': tags,
+        'fields': {
+            'value': value,
+        }
+    }]
+    client = influxdb.InfluxDBClient(INFLUXDB_HOST, INFLUXDB_PORT,
+                                     INFLUXDB_USER, INFLUXDB_PASSWORD,
+                                     INFLUXDB_DATABASE)
+    print('INFLUX: Processing device %s' % name)
+    success = client.write_points(data)
+    if success is not True:
+        raise RuntimeError('Could not send metric to InfluxDB')
 
 
 # Particle Cloud API related functionality
@@ -136,10 +139,15 @@ def get_devices():
         config = json.loads(f.read())
     return config
 
+
 # Entry point
 
 if __name__ == '__main__':
+
+    # Read config file
     devices = get_devices()
+
+    # For each device, fetch and upload the variables
     access_token = get_access_token()
     for name, variables in devices.items():
         print('MAIN: Processing device %s' % name)
@@ -149,4 +157,4 @@ if __name__ == '__main__':
             if value is None:
                 print('MAIN: Could not fetch variable %s for device %s' % (variable, name))
             else:
-                collect_metric(conf['metric_name'], value)
+                collect_metric(conf['measurement'], conf['tags'], value)
