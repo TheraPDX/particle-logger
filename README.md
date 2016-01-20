@@ -1,6 +1,6 @@
-# Photon Logger
+# Particle Logger
 
-Log temperatures from Photons to Grafana through InfluxDB.
+Log temperatures from Particle devices to Grafana through InfluxDB.
 
 
 ## Env Vars
@@ -61,7 +61,7 @@ You should now have a client id, a client secret and a refresh token.
 
 Build the image:
 
-    $ docker build -t coredump-ch/photon-logger:latest .
+    $ docker build -t coredump-ch/particle-logger:latest .
 
 Start the image:
 
@@ -73,8 +73,8 @@ Start the image:
         -e PARTICLE_CLIENT_ID=<client-id> \
         -e PARTICLE_CLIENT_SECRET=<client-secret> \
         -e PARTICLE_REFRESH_TOKEN=<refresh-token>
-        coredump-ch/photon-logger:latest
+        coredump-ch/particle-logger:latest
 
 Or push the container to Docker Hub:
 
-    $ docker push coredump-ch/photon-logger:latest
+    $ docker push coredump-ch/particle-logger:latest

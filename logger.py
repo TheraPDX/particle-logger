@@ -1,6 +1,6 @@
 """
-A small Python 3 script to check the `temperature` variable Particle Photons
-and log them to a Grafana board.
+A small Python 3 script to check a variable on Particle devices and log it to a
+Grafana board.
 """
 
 import json
