@@ -61,7 +61,7 @@ def collect_metric(measurement, tags, value):
         'measurement': measurement,
         'tags': tags,
         'fields': {
-            'value': value,
+            'value': float(value),
         }
     }]
     client = influxdb.InfluxDBClient(INFLUXDB_HOST, INFLUXDB_PORT,
