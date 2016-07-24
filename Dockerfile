@@ -1,12 +1,13 @@
 FROM python:alpine
 MAINTAINER Danilo Bargen <mail@dbrgn.ch>
 
-# Install dependencies
-RUN pip install "requests<=3"
-
 # Code directory
 RUN mkdir /code
 WORKDIR /code
+
+# Install dependencies
+ADD requirements.txt /code/
+RUN pip install -r /code/requirements.txt
 
 # Add code
 ADD logger.py config.json run.sh /code/
