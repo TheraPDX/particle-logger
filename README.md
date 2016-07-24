@@ -72,7 +72,7 @@ Start the image:
         -e INFLUXDB_DATABASE=<database> \
         -e PARTICLE_CLIENT_ID=<client-id> \
         -e PARTICLE_CLIENT_SECRET=<client-secret> \
-        -e PARTICLE_REFRESH_TOKEN=<refresh-token>
+        -e PARTICLE_REFRESH_TOKEN=<refresh-token> \
         coredump-ch/particle-logger:latest
 
 Or push the container to Docker Hub:
